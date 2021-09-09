@@ -12,7 +12,8 @@ def init_plugin():
         # The name of your plugin
         'plugin_name'      : 'BIRDSIM',
         'plugin_type'      : 'sim',
-        'update'           : update
+        'update'           : update,
+        'reset'            : reset
         }
 
     return config
@@ -22,6 +23,13 @@ def update():
     # do modelling here. update bird state lat,lon,alt,hdg,etc
     
     # send data to bird gui (this should be last step of your things)
+    bird_traf.release_birds()
+
+def reset():
+    # clear everything. TODO: smarter way to do this
+    bird_traf.reset()
+    
+    # release birds with no info to clear screen TODO: smarter way to do this
     bird_traf.release_birds()
 
 @stack.command
@@ -56,7 +64,7 @@ class BirdTraffic():
         self.hs     = np.array([], dtype=float)   # horizontal airspeed [m/s]
         self.vs     = np.array([], dtype=float)  # vertical speed [m/s]
 
-        # add or change anny arrays you like
+        # add or change any arrays you like
     
     def create(self, birdid, birdtype="goose", birdlat=52., birdlon=4., birdhdg=None, birdalt=0, birdspd=0):
         # add one bird
@@ -107,6 +115,24 @@ class BirdTraffic():
 
         # send bird data
         bs.net.send_stream(b'BIRDDATA', data)
+    
+    def reset(self):
+        # clear all TODO: copy traffarrays
+        self.nbird = 0 # number of birds
+        
+        # initialize bid array
+        self.id      = []  # identifier (string)
+        self.type    = []  # bird type (string)
+
+        # Positions
+        self.lat     = np.array([], dtype=float)  # latitude [deg]
+        self.lon     = np.array([], dtype=float)  # longitude [deg]
+        self.alt     = np.array([], dtype=float)  # altitude [m]
+        self.hdg     = np.array([], dtype=float)  # traffic heading [deg]
+
+        # Velocities
+        self.hs     = np.array([], dtype=float)   # horizontal airspeed [m/s]
+        self.vs     = np.array([], dtype=float)  # vertical speed [m/s]
 
 
 # initialize bird traffic

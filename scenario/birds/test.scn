@@ -9,3 +9,5 @@
 00:00:00.00>CREBIRD BIRD1,goose,52.1,4,0,25,10
 00:00:00.00>CREBIRD BIRD2,goose,52.2,4.1,0,25,10
 
+# create an regular aircraft with CRE command
+00:00:00.00>CRE A102,M600,52.1,4.1,0,25,10
