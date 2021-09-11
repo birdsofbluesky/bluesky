@@ -139,7 +139,8 @@ class BirdTraffic(ui.RenderObject, layer=100):
     def bird_catcher(self, name, data, sender_id):
         """receive stream from bluesky sim.
         """
-
-        # update bird data if stream is bird data
-        if name == b'BIRDDATA':
-            self.update_bird_data(data)
+        # only display data if received from active node
+        if sender_id == bs.net.act:
+            # update bird data if stream is bird data
+            if name == b'BIRDDATA':
+                self.update_bird_data(data)
