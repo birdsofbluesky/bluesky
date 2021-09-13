@@ -7,6 +7,7 @@ from bluesky.ui import palette
 from bluesky import settings
 import bluesky.ui.qtgl.glhelpers as glh
 from bluesky.tools.aero import ft
+from bluesky.ui.qtgl.guiclient import UPDATE_ALL
 
 # Register settings defaults
 settings.set_variable_defaults(text_size=13, bird_size=10)
@@ -43,11 +44,14 @@ class BirdTraffic(ui.RenderObject, layer=100):
         self.nbirds = 0
         self.show_lbl = True
 
-        # subscribe to BIRDDATA stream
-        bs.net.subscribe(b'BIRDDATA')
-
+        # subscribe to BIRDDATA stream only from active node
+        bs.net.subscribe(b'BIRDDATA', actonly=True)
+        
         # connect the stream to bird catcher
         bs.net.stream_received.connect(self.bird_catcher)
+
+        # get stream of actnodedata changed to reset birds
+        bs.net.actnodedata_changed.connect(self.bird_reset)
 
     def create(self):
         bird_size = settings.bird_size
@@ -94,9 +98,7 @@ class BirdTraffic(ui.RenderObject, layer=100):
         #     self.birdlabels.draw(n_instances=self.nbirds)
 
     def update_bird_data(self, data):
-        # receive data from sim plugin
-        # data = bird_catcher.receive_bird_data()
-
+        
         # get bird data
         bird_id = data['id']
         bird_type = data['type']
@@ -107,14 +109,14 @@ class BirdTraffic(ui.RenderObject, layer=100):
         bird_vs = data['vs']
         bird_hs = data['hs']
 
+        # update buffers
         self.nbirds = len(bird_lat)
-
         self.bird_lat.update(np.array(bird_lat, dtype=np.float32))
         self.bird_lon.update(np.array(bird_lon, dtype=np.float32))
         self.bird_hdg.update(np.array(bird_hdg, dtype=np.float32))
         self.bird_alt.update(np.array(bird_alt, dtype=np.float32))
 
-        # initialize some color
+        # colors
         rawlabel = ''
         color = np.empty(
             (min(self.nbirds, MAX_NBIRDS), 4), dtype=np.uint8)
@@ -139,8 +141,28 @@ class BirdTraffic(ui.RenderObject, layer=100):
     def bird_catcher(self, name, data, sender_id):
         """receive stream from bluesky sim.
         """
-        # only display data if received from active node
-        if sender_id == bs.net.act:
-            # update bird data if stream is bird data
-            if name == b'BIRDDATA':
-                self.update_bird_data(data)
+        # update bird data if stream is bird data
+        if name == b'BIRDDATA':
+            self.update_bird_data(data)
+
+    def bird_reset(self, nodeid, nodedata, changed_elems):
+        """Receive signal from actnodedata_changed.
+        When changed_elems is equal to UPDATE_ALL from gui client 
+        it signals a reset or a new node.
+        """
+        # reset birds if changing to a new active node
+        if changed_elems == UPDATE_ALL:
+            
+            data = dict()
+
+            data['id']         =[]
+            data['type']       = []
+            data['lat']        = []
+            data['lon']        = []
+            data['alt']        = []
+            data['hdg']        = []
+            data['vs']         = []
+            data['hs']         = []
+
+            self.update_bird_data(data)
+        
