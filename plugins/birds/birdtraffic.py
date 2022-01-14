@@ -1,10 +1,13 @@
 ''' Bird traffic simulation plugin '''
+from re import I
+from wsgiref.handlers import IISCGIHandler
 import numpy as np
 
 import bluesky as bs
 from bluesky import stack
 from bluesky.tools.aero import ft, kts
 from bluesky.stack.cmdparser import append_commands
+from bluesky.core.walltime import Timer
 
 def init_plugin():
 
@@ -19,11 +22,9 @@ def init_plugin():
     return config
 
 def update():
-
     # do modelling here. update bird state lat,lon,alt,hdg,etc
-    
-    # send data to bird gui (this should be last step of your things)
-    bird_traf.release_birds()
+
+    ...
 
 def reset():
     # clear everything. TODO: smarter way to do this
@@ -89,7 +90,13 @@ class BirdTraffic():
         
         '''
 
+        # Update rate of aircraft update messages [Hz]
+        birdupdate_rate = 5
 
+        # create a timer to send bird data
+        self.fast_timer = Timer()
+        self.fast_timer.timeout.connect(self.release_birds)
+        self.fast_timer.start(int(1000 / 5))
 
         # add or change any arrays you like
     
