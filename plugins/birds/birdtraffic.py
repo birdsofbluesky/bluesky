@@ -89,14 +89,14 @@ class BirdTraffic():
         for non-plugin functions (e.g addwptmode yes (in route) but metrics (plugin metrics))
         
         '''
-
+        # see screenio.py
         # Update rate of aircraft update messages [Hz]
         birdupdate_rate = 5
 
         # create a timer to send bird data
         self.fast_timer = Timer()
         self.fast_timer.timeout.connect(self.release_birds)
-        self.fast_timer.start(int(1000 / 5))
+        self.fast_timer.start(int(1000 / birdupdate_rate))
 
         # add or change any arrays you like
     
