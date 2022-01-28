@@ -6,14 +6,16 @@ from bluesky import ui
 from bluesky.ui import palette
 from bluesky import settings
 import bluesky.ui.qtgl.glhelpers as glh
-from bluesky.tools.aero import ft
+from bluesky.tools.aero import ft, nm, kts
 from bluesky.ui.qtgl.guiclient import UPDATE_ALL
 
 # Register settings defaults
 settings.set_variable_defaults(text_size=13, bird_size=10)
 
 palette.set_default_colours(
-    bird=(255, 0, 0))
+    bird=(255, 0, 0),
+    angry_bird=(255, 160, 0)
+)
 
 # Static
 MAX_NBIRDS = 10000
@@ -93,9 +95,8 @@ class BirdTraffic(ui.RenderObject, layer=100):
         if self.nbirds:
             self.bird_symbol.draw(n_instances=self.nbirds)
 
-        # TODO: fix label
-        # if self.show_lbl:
-        #     self.birdlabels.draw(n_instances=self.nbirds)
+        if self.show_lbl:
+            self.birdlabels.draw(n_instances=self.nbirds)
 
     def update_bird_data(self, data):
         
@@ -108,6 +109,8 @@ class BirdTraffic(ui.RenderObject, layer=100):
         bird_alt = data['alt']
         bird_vs = data['vs']
         bird_hs = data['hs']
+        bird_lbl_type = data['lbl_type']
+        angry_birds = data['angry_birds']
 
         # update buffers
         self.nbirds = len(bird_lat)
@@ -122,17 +125,31 @@ class BirdTraffic(ui.RenderObject, layer=100):
             (min(self.nbirds, MAX_NBIRDS), 4), dtype=np.uint8)
         rgb_bird = palette.bird
 
-        zdata = zip(data['id'], data['alt'])
-        for i, (id, alt) in enumerate(zdata):
+        zdata = zip(bird_id, bird_type, bird_alt, bird_vs, bird_hs, angry_birds)
+        for i, (id, b_type, alt, vs, hs, angry_bird) in enumerate(zdata):
             if i >= MAX_NBIRDS:
                 break
 
             # Make label
             if self.show_lbl:
-                rawlabel += '%-8s' % id[:8]
+                if bird_lbl_type == 'id':
+                    rawlabel += '%-8s' % id[:8]
+                else:
+                    rawlabel += '%-8s' % b_type[:8]
+                    
                 rawlabel += '%-5d' % int(alt / ft + 0.5)
+                vsarrow = 30 if vs > 0.25 else 31 if vs < -0.25 else 32
+                rawlabel += '%1s  %-8d' % (chr(vsarrow),
+                                            int(hs / kts + 0.5))
+            
+            # check if bird is angry
+            if angry_bird:
+                color[i, :] = palette.angry_bird + (255,)
 
-            color[i, :] = tuple(rgb_bird) + (255,)
+            else:
+                # Set default color
+                color[i, :] = tuple(rgb_bird) + (255,)
+
         
         # update bird label
         self.bird_color.update(color)

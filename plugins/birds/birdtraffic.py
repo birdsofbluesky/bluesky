@@ -52,6 +52,12 @@ def DELBIRD(birdid):
     bird_traf.remove_bird(birdid)
 
 
+@stack.command(name='BIRDLABEL')
+def birdlabel():
+    ''' BIRDLABEL'''
+    # choose the other option
+    bird_traf.lbl_type = bird_traf.labels[0] if bird_traf.lbl_type == bird_traf.labels[1] else bird_traf.labels[1]
+
 class BirdTraffic():
     # TODO: need to figure out how to delete things in a smart way
     def __init__(self):
@@ -72,6 +78,13 @@ class BirdTraffic():
         self.hs     = np.array([], dtype=float)   # horizontal airspeed [m/s]
         self.vs     = np.array([], dtype=float)  # vertical speed [m/s]
 
+        # Boolean to indicate if the bird is in danger of striking an aircraft
+        # At the moment this just changes the color of the bird.
+        self.angry_birds = np.array([], dtype=bool)
+
+        # Label type to show in gui. Default is 'id;
+        self.labels = ["id", "type"]
+        self.lbl_type  = self.labels[0]
 
         '''        # to make testing a bit easier: add syntax for CREBIRD to the gui
         cmd_dict = {        
@@ -132,6 +145,9 @@ class BirdTraffic():
         vs = 0
         self.vs = np.append(self.vs, vs)
 
+        # set danger of striking an aircraft to 
+        self.angry_birds = np.append(self.angry_birds, False)
+
     def id2idx(self, birdid):
         """Find index of bird id"""
 
@@ -148,6 +164,8 @@ class BirdTraffic():
         data['hdg']        = self.hdg
         data['vs']         = self.vs
         data['hs']         = self.hs
+        data['angry_birds']= self.angry_birds
+        data['lbl_type']   = self.lbl_type
 
         # send bird data
         bs.net.send_stream(b'BIRDDATA', data)
@@ -237,6 +255,9 @@ class BirdTraffic():
         # Velocities
         self.hs     = np.array([], dtype=float)   # horizontal airspeed [m/s]
         self.vs     = np.array([], dtype=float)  # vertical speed [m/s]
+
+        # danger of striking an aircraft
+        self.angry_birds = np.array([], dtype=bool)
         
         return
 
